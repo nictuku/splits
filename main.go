@@ -17,15 +17,15 @@ import (
 )
 
 func formatDuration(d time.Duration) string {
-  d = d.Round(time.Second)
-    h := d / time.Hour
-    d -= h * time.Hour
-    m := d / time.Minute
-    d -= m * time.Minute
-    s := d / time.Second
-    ret := fmt.Sprintf("%02d:%02d:%02d", h, m, s)
-   fmt.Println("dur", ret, h, m, s, d)
-return ret
+	d = d.Round(time.Second)
+	h := d / time.Hour
+	d -= h * time.Hour
+	m := d / time.Minute
+	d -= m * time.Minute
+	s := d / time.Second
+	ret := fmt.Sprintf("%02d:%02d:%02d", h, m, s)
+	fmt.Println("dur", ret, h, m, s, d)
+	return ret
 }
 
 func main() {
@@ -101,61 +101,61 @@ func main() {
 		// Start listen hotkey event whenever it is ready.
 		for {
 			select {
-				case <-startKey.Keydown():
-					if needsReset {
-						continue
-					}
-					fmt.Println("key")
-					if startTime.IsZero() {
-						startTime = time.Now()
-						c := time.NewTicker(time.Second)
+			case <-startKey.Keydown():
+				if needsReset {
+					continue
+				}
+				fmt.Println("key")
+				if startTime.IsZero() {
+					startTime = time.Now()
+					c := time.NewTicker(time.Second)
 
-						go func() {
-							for {
-								select {
-								case <-c.C:
-									tm := time.Since(startTime)
-									runTimer.SetText(formatDuration(tm))
-									// I think this is unsafe.
-									splitsText[currentSplit*2+1].SetText(formatDuration(time.Since(startTime)))
-								case <-done:
-									c.Stop()
-									return
-								}
+					go func() {
+						for {
+							select {
+							case <-c.C:
+								tm := time.Since(startTime)
+								runTimer.SetText(formatDuration(tm))
+								// I think this is unsafe.
+								splitsText[currentSplit*2+1].SetText(formatDuration(time.Since(startTime)))
+							case <-done:
+								c.Stop()
+								return
 							}
-						}()
+						}
+					}()
+					continue
+				}
+				splitsText[currentSplit*2+1].SetText(formatDuration(time.Since(startTime)))
+				currentSplit += 1
+				button.Tapped(&fyne.PointEvent{})
+				if currentSplit >= len(splitsText)/2 {
+					runTimer.SetText(fmt.Sprintf("END %v", formatDuration(time.Since(startTime))))
+					currentSplit = 0
+					startTime = time.Time{}
+					select {
+					case done <- struct{}{}:
+					default:
+					}
+					needsReset = true
+				}
+			case <-resetKey.Keydown():
+				fmt.Println("reseting")
+				startTime = time.Time{}
+				currentSplit = 0
+				fmt.Println("resetting these", len(splitsText))
+				for i, split := range splitsText {
+					if i%2 == 0 {
 						continue
 					}
-					splitsText[currentSplit*2+1].SetText(formatDuration(time.Since(startTime)))
-					currentSplit += 1
-					button.Tapped(&fyne.PointEvent{})
-					if currentSplit >= len(splitsText)/2 {
-						runTimer.SetText(fmt.Sprintf("END %v", formatDuration(time.Since(startTime))))
-						currentSplit = 0
-						startTime = time.Time{}
-						select {
-							case done <- struct{}{}:
-							default:
-						}
-						needsReset = true
-					}
-				case <-resetKey.Keydown():
-					fmt.Println("reseting")
-					startTime = time.Time{}
-					currentSplit = 0
-					fmt.Println("resetting these", len(splitsText))
-					for i, split := range splitsText {
-						if i % 2 == 0 {
-							continue
-						}
-						split.SetText("0:0")
-					}
-					runTimer.SetText("0:0")
-					select {
-						case done <- struct{}{}:
-						default:
-					}
-					needsReset = false
+					split.SetText("0:0")
+				}
+				runTimer.SetText("0:0")
+				select {
+				case done <- struct{}{}:
+				default:
+				}
+				needsReset = false
 			}
 		}
 	}()
