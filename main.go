@@ -5,7 +5,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log"
+	"os"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -14,6 +17,10 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"golang.design/x/hotkey"
+
+	_ "go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func formatDuration(d time.Duration) string {
@@ -29,6 +36,26 @@ func formatDuration(d time.Duration) string {
 }
 
 func main() {
+	ctx := context.Background()
+	serverAPIOptions := options.ServerAPI(options.ServerAPIVersion1)
+	clientOptions := options.Client().
+		ApplyURI(fmt.Sprintf("mongodb+srv://splits:%s@cluster0.x2a6d.mongodb.net/?retryWrites=true&w=majority", os.Getenv("SPLITS_MONGO_PASS"))).
+		SetServerAPIOptions(serverAPIOptions)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	client, err := mongo.Connect(ctx, clientOptions)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Check the connection
+	err = client.Ping(context.TODO(), nil)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Connected to MongoDB!")
+
 	w := app.New().NewWindow("Mega Man 2 Any% (Normal, Zipless)")
 	label := widget.NewLabel("Hello golang.design!")
 	button := widget.NewButton("Hi!", func() { label.SetText("Welcome :)") })
