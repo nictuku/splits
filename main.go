@@ -17,12 +17,19 @@ import (
 )
 
 func formatDuration(d time.Duration) string {
-
-	return fmt.Sprintf("%.f:%.f:%.f", d.Hours(), d.Minutes(), d.Seconds())
+  d = d.Round(time.Second)
+    h := d / time.Hour
+    d -= h * time.Hour
+    m := d / time.Minute
+    d -= m * time.Minute
+    s := d / time.Second
+    ret := fmt.Sprintf("%02d:%02d:%02d", h, m, s)
+   fmt.Println("dur", ret, h, m, s, d)
+return ret
 }
 
 func main() {
-	w := app.New().NewWindow("Mega Man 2")
+	w := app.New().NewWindow("Mega Man 2 Any% (Normal, Zipless)")
 	label := widget.NewLabel("Hello golang.design!")
 	button := widget.NewButton("Hi!", func() { label.SetText("Welcome :)") })
 
@@ -46,7 +53,7 @@ func main() {
 	splitsText := []*widget.Label{}
 	for _, s := range splits {
 
-		splitTime := widget.NewLabel("0.0")
+		splitTime := widget.NewLabel("00:00")
 		splitTime.Alignment = fyne.TextAlignTrailing
 		splitsText = append(splitsText, widget.NewLabel(s), splitTime)
 	}
@@ -59,7 +66,9 @@ func main() {
 	runTimer.Alignment = fyne.TextAlignTrailing
 	runTimer.TextStyle.Bold = true
 	// Keep the first colum of the last row empty
-	objs = append(objs, widget.NewLabel(""))
+	arrow := widget.NewLabel("==========>")
+	arrow.Alignment = fyne.TextAlignTrailing
+	objs = append(objs, arrow)
 	objs = append(objs, runTimer)
 
 	grid := container.New(layout.NewGridLayout(2), objs...)
@@ -107,6 +116,8 @@ func main() {
 								case <-c.C:
 									tm := time.Since(startTime)
 									runTimer.SetText(formatDuration(tm))
+									// I think this is unsafe.
+									splitsText[currentSplit*2+1].SetText(formatDuration(time.Since(startTime)))
 								case <-done:
 									c.Stop()
 									return
