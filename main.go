@@ -93,7 +93,7 @@ func main() {
 	runTimer.Alignment = fyne.TextAlignTrailing
 	runTimer.TextStyle.Bold = true
 	// Keep the first colum of the last row empty
-	arrow := widget.NewLabel("==========>")
+	arrow := widget.NewLabel("==========>  (current PB: 35:22)")
 	arrow.Alignment = fyne.TextAlignTrailing
 	objs = append(objs, arrow)
 	objs = append(objs, runTimer)
