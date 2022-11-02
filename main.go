@@ -6,22 +6,58 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"log"
-	"os"
-	"time"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"golang.design/x/hotkey"
+	"io/ioutil"
+	"log"
+	"os"
+	"time"
 
 	_ "go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+type SplitsFile struct {
+	Splits []string
+	Levels []string
+}
+
+func readSplits() (*SplitsFile, error) {
+	content, err := ioutil.ReadFile("./splits.json")
+	if err != nil {
+		return nil, err
+	}
+
+	var splitsData SplitsFile
+	err = json.Unmarshal(content, &splitsData)
+	if err != nil {
+		return nil, err
+	}
+	return &splitsData, nil
+}
+
+func writeSplits(splitsText []*widget.Label, splitsLevels []string) {
+	splitsTimes := []string{}
+	for i, s := range splitsText {
+		if i%2 == 1 {
+			splitsTimes = append(splitsTimes, s.Text)
+		}
+	}
+	data := SplitsFile{
+		Splits: splitsTimes,
+		Levels: splitsLevels,
+	}
+	file, _ := json.MarshalIndent(data, "", " ")
+	_ = ioutil.WriteFile("splits.json", file, 0644)
+
+}
 
 func formatDuration(d time.Duration) string {
 	d = d.Round(time.Second)
@@ -60,29 +96,41 @@ func main() {
 	label := widget.NewLabel("Hello golang.design!")
 	button := widget.NewButton("Hi!", func() { label.SetText("Welcome :)") })
 
-	splits := []string{
-		"Flash",
-		"Air",
-		"Quick",
-		"Metal",
-		"Bubble",
-		"Heat",
-		"Wood",
-		"Crash",
-		"Wily 1",
-		"Wily 2",
-		"Wily 3",
-		"Wily 4",
-		"Wily 5",
-		"Wily 6",
-	}
-
 	splitsText := []*widget.Label{}
-	for _, s := range splits {
+	splits, err := readSplits()
+	if err != nil {
+		log.Println("Couldn't read splits file, using default ones:", err)
+		splits = &SplitsFile{Levels: []string{
+			"Flash",
+			"Air",
+			"Quick",
+			"Metal",
+			"Bubble",
+			"Heat",
+			"Wood",
+			"Crash",
+			"Wily 1",
+			"Wily 2",
+			"Wily 3",
+			"Wily 4",
+			"Wily 5",
+			"Wily 6",
+		}}
+		for _, s := range splits.Levels {
 
-		splitTime := widget.NewLabel("00:00")
-		splitTime.Alignment = fyne.TextAlignTrailing
-		splitsText = append(splitsText, widget.NewLabel(s), splitTime)
+			splitTime := widget.NewLabel("00:00")
+			splitTime.Alignment = fyne.TextAlignTrailing
+			splitsText = append(splitsText, widget.NewLabel(s), splitTime)
+		}
+
+	} else if len(splits.Levels) > 0 {
+		for i, s := range splits.Splits {
+
+			splitTime := widget.NewLabel(s)
+			splitTime.Alignment = fyne.TextAlignTrailing
+			// TODO: don't trust that Levels and Splits match
+			splitsText = append(splitsText, widget.NewLabel(splits.Levels[i]), splitTime)
+		}
 	}
 
 	objs := make([]fyne.CanvasObject, 0, len(splitsText)+1)
@@ -168,6 +216,7 @@ func main() {
 				}
 			case <-resetKey.Keydown():
 				fmt.Println("reseting")
+				writeSplits(splitsText, splits.Levels)
 				startTime = time.Time{}
 				currentSplit = 0
 				fmt.Println("resetting these", len(splitsText))
