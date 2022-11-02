@@ -129,7 +129,7 @@ func main() {
 			splitTime := widget.NewLabel(s)
 			splitTime.Alignment = fyne.TextAlignTrailing
 			// TODO: don't trust that Levels and Splits match
-			splitsText = append(splitsText, widget.NewLabel(splits.Levels[i]), splitTime)
+			splitsText = append(splitsText, widget.NewLabel(splits.Levels[i]), splitTime, widget.NewLabel("-"))
 		}
 	}
 
@@ -146,7 +146,7 @@ func main() {
 	objs = append(objs, arrow)
 	objs = append(objs, runTimer)
 
-	grid := container.New(layout.NewGridLayout(2), objs...)
+	grid := container.New(layout.NewGridLayout(3), objs...)
 
 	w.SetContent(grid)
 
@@ -192,7 +192,7 @@ func main() {
 								tm := time.Since(startTime)
 								runTimer.SetText(formatDuration(tm))
 								// I think this is unsafe.
-								splitsText[currentSplit*2+1].SetText(formatDuration(time.Since(startTime)))
+								splitsText[currentSplit*3+2].SetText(formatDuration(time.Since(startTime)))
 							case <-done:
 								c.Stop()
 								return
@@ -201,10 +201,10 @@ func main() {
 					}()
 					continue
 				}
-				splitsText[currentSplit*2+1].SetText(formatDuration(time.Since(startTime)))
+				splitsText[currentSplit*3+2].SetText(formatDuration(time.Since(startTime)))
 				currentSplit += 1
 				button.Tapped(&fyne.PointEvent{})
-				if currentSplit >= len(splitsText)/2 {
+				if currentSplit >= len(splitsText)/3 {
 					runTimer.SetText(fmt.Sprintf("END %v", formatDuration(time.Since(startTime))))
 					currentSplit = 0
 					startTime = time.Time{}
@@ -221,10 +221,9 @@ func main() {
 				currentSplit = 0
 				fmt.Println("resetting these", len(splitsText))
 				for i, split := range splitsText {
-					if i%2 == 0 {
-						continue
+					if i%3 == 0 {
+						split.SetText("0:0")
 					}
-					split.SetText("0:0")
 				}
 				runTimer.SetText("0:0")
 				select {
