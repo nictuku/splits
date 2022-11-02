@@ -129,7 +129,9 @@ func main() {
 			splitTime := widget.NewLabel(s)
 			splitTime.Alignment = fyne.TextAlignTrailing
 			// TODO: don't trust that Levels and Splits match
-			splitsText = append(splitsText, widget.NewLabel(splits.Levels[i]), splitTime, widget.NewLabel("-"))
+			splitWaiting := widget.NewLabel("-")
+			splitWaiting.Alignment = fyne.TextAlignTrailing
+			splitsText = append(splitsText, widget.NewLabel(splits.Levels[i]), splitTime, splitWaiting)
 		}
 	}
 
@@ -143,7 +145,7 @@ func main() {
 	// Keep the first colum of the last row empty
 	arrow := widget.NewLabel("==========>  (current PB: 35:22)")
 	arrow.Alignment = fyne.TextAlignTrailing
-	objs = append(objs, arrow)
+	objs = append(objs, widget.NewLabel(""), arrow)
 	objs = append(objs, runTimer)
 
 	grid := container.New(layout.NewGridLayout(3), objs...)
@@ -192,6 +194,7 @@ func main() {
 								tm := time.Since(startTime)
 								runTimer.SetText(formatDuration(tm))
 								// I think this is unsafe.
+								// TODO: show the time diff between this and the pb
 								splitsText[currentSplit*3+2].SetText(formatDuration(time.Since(startTime)))
 							case <-done:
 								c.Stop()
@@ -234,7 +237,7 @@ func main() {
 			}
 		}
 	}()
-	w.Resize(fyne.Size{Height: 150, Width: 380})
+	w.Resize(fyne.Size{Height: 150, Width: 180}) // width doesn't seem to work
 	w.ShowAndRun()
 
 }
